@@ -93,7 +93,7 @@ def preseed_memory_defaults():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manages application startup and graceful shutdown lifecycle."""
-    logger.info("--- Intelligence Harness Autonomous Agent Pipeline Initialized ---")
+    logger.info("--- AnimateIQ Autonomous Agent Pipeline Initialized ---")
     preseed_memory_defaults()
     
     # Start background job processing daemon loop
@@ -104,11 +104,11 @@ async def lifespan(app: FastAPI):
         await daemon_task
     except asyncio.CancelledError:
         logger.info("Background daemon task cancelled gracefully.")
-    logger.info("--- Intelligence Harness Autonomous Agent Pipeline Shutting Down ---")
+    logger.info("--- AnimateIQ Autonomous Agent Pipeline Shutting Down ---")
 
 app = FastAPI(
-    title="Gemini Intelligence Harness",
-    description="7-Layer Multi-Agent Intelligence Harness running on Google Gemini.",
+    title="AnimateIQ - Gemini Multi-Agent Engine",
+    description="7-Layer Multi-Agent Content Engine for Anime/Manga running on Google Gemini.",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -122,7 +122,7 @@ async def serve_dashboard():
     """Serves the frontend visual dashboard at the root URL."""
     if os.path.exists("static/index.html"):
         return FileResponse("static/index.html")
-    return {"message": "Intelligence Harness Backend API is active. Front-end static files are missing."}
+    return {"message": "AnimateIQ Backend API is active. Front-end static files are missing."}
 
 
 # --- PIPELINE ORCHESTRATION RUNTIME ---
@@ -395,7 +395,7 @@ async def parse_prompt_to_task(req: HarnessRequest):
     """
     logger.info(f"[API: Parse] Parsing raw user prompt: '{req.prompt}'")
     prompt = (
-        f"You are the Interface Layer parser of the MangaMotive Intelligence Harness.\n"
+        f"You are the Interface Layer parser of the AnimateIQ Engine.\n"
         f"Parse the user's raw video or blog request into a structured task JSON object.\n\n"
         f"User Prompt: \"{req.prompt}\"\n\n"
         f"Determine the topic, style/tone, target_platform, estimated duration, and assets needed (e.g. Script, Thumbnail, Voice Audio, Finished Video)."
