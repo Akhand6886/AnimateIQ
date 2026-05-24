@@ -38,7 +38,7 @@ class ExecutivePlanner:
         )
 
         prompt = (
-            f"You are the Executive Planner of the MangaMotive Intelligence Harness.\n"
+            f"You are the Executive Planner of the AnimateIQ Engine.\n"
             f"Your job is to plan the complete work pipeline to fulfill the following structured task:\n\n"
             f"--- STRUCTURED TASK ---\n"
             f"- Topic: {task.topic}\n"
