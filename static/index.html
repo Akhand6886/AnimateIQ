@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Intelligence Harness</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-logo">⚡</span>
+                <div class="brand-text">
+                    <h1>MANO</h1>
+                    <span class="sub-brand">GEMINI HARNESS</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-btn active" data-tab="orchestrator">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    <span>Orchestrator</span>
+                </button>
+                <button class="nav-btn" data-tab="execution" id="nav-execution">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    <span>Active Loop</span>
+                    <span class="badge hidden" id="execution-badge"></span>
+                </button>
+                <button class="nav-btn" data-tab="memory">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 6v6l4 2"/></svg>
+                    <span>Memory Store</span>
+                </button>
+                <button class="nav-btn" data-tab="history">
+                    <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Job Archives</span>
+                </button>
+            </nav>
+            <div class="system-status">
+                <div class="pulse-container">
+                    <span class="pulse-indicator"></span>
+                    <span class="status-lbl">System Online</span>
+                </div>
+                <div class="status-details">Gemini Active Engine</div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="workspace">
+            <header class="workspace-header">
+                <div class="header-title">
+                    <h2 id="page-title">Executive Orchestrator</h2>
+                    <p id="page-desc">Transform raw AI prompts into a structured thinking machine ecosystem.</p>
+                </div>
+                <div class="header-actions">
+                    <div class="model-badge">
+                        <span class="dot"></span>
+                        <span class="model-name">GEMINI (gemini-1.5-flash)</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tab: Orchestrator -->
+            <section class="tab-pane active" id="tab-orchestrator">
+                <div class="grid-2-1">
+                    <div class="card glass">
+                        <div class="card-header">
+                            <h3>1. Input Interface Layer</h3>
+                            <p>Submit a high-level request to be parsed into structural task constraints.</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="input-wrapper">
+                                <textarea id="raw-prompt" placeholder="e.g. Make a 60s YouTube short review about Demon Slayer Season 4 Episode 1 highlighting the Hashira Training..." rows="4"></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-primary" id="btn-parse-prompt">
+                                    <span>Analyze & Parse Request</span>
+                                    <span class="spinner hidden" id="parse-spinner"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel: Structured Task Edit -->
+                    <div class="card glass disabled" id="structured-task-card">
+                        <div class="card-header">
+                            <h3>2. Structured Task Definition</h3>
+                            <p>Verify extracted parameters parsed by the LLM before execution.</p>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label>Topic / Franchise</label>
+                                <input type="text" id="task-topic" readonly>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Target Platform</label>
+                                    <input type="text" id="task-platform" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Duration / Length</label>
+                                    <input type="text" id="task-duration" readonly>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Editorial Style Guidelines</label>
+                                <input type="text" id="task-style" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Required Assets</label>
+                                <div class="tags-container" id="task-assets">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                            <div class="form-actions mt-2">
+                                <button class="btn btn-accent" id="btn-run-harness" disabled>
+                                    <span>Trigger Intelligence Harness</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Features Highlight Panel -->
+                <div class="dashboard-highlights">
+                    <div class="highlight-box">
+                        <div class="icon">🤖</div>
+                        <h4>Dynamic Planning</h4>
+                        <p>Executive Brain decomposes prompt goals on the fly.</p>
+                    </div>
+                    <div class="highlight-box">
+                        <div class="icon">⚖️</div>
+                        <h4>Evaluation Loops</h4>
+                        <p>Outputs are verified for factual errors and style rules.</p>
+                    </div>
+                    <div class="highlight-box">
+                        <div class="icon">💾</div>
+                        <h4>Cumulative Memory</h4>
+                        <p>SQLite store forces learning, adapting tone and slug preferences.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Active Execution Loop -->
+            <section class="tab-pane" id="tab-execution">
+                <div class="execution-grid">
+                    <!-- Left: Planning Timeline -->
+                    <div class="card glass flex-column">
+                        <div class="card-header">
+                            <h3>Plan Execution Pipeline</h3>
+                            <p id="execution-job-lbl">No active execution queued.</p>
+                        </div>
+                        <div class="card-body timeline-wrapper">
+                            <div class="timeline" id="execution-timeline">
+                                <div class="timeline-empty">
+                                    <div class="pulse-icon">⏳</div>
+                                    <p>Submit a request in the Orchestrator tab to view the live execution graph.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Console Log / Output Verification -->
+                    <div class="flex-column gap-1">
+                        <!-- Card: Evaluation Layer Audits -->
+                        <div class="card glass" id="evaluation-card">
+                            <div class="card-header">
+                                <h3>Evaluation Layer Verdict</h3>
+                                <span class="badge" id="eval-badge">Pending</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="metrics-grid">
+                                    <div class="metric-card">
+                                        <div class="metric-val" id="metric-fact">-</div>
+                                        <div class="metric-lbl">Fact Score</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-val" id="metric-style">-</div>
+                                        <div class="metric-lbl">Style Score</div>
+                                    </div>
+                                    <div class="metric-card">
+                                        <div class="metric-val" id="metric-engagement">-</div>
+                                        <div class="metric-lbl">Engagement</div>
+                                    </div>
+                                </div>
+                                <div class="audit-errors list-container hidden" id="audit-errors-container">
+                                    <h4>Auditor Notes:</h4>
+                                    <ul id="audit-errors-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card: Realtime stdout logs console -->
+                        <div class="card glass terminal-card">
+                            <div class="card-header">
+                                <h3>Agent Terminal Output</h3>
+                                <div class="terminal-dots">
+                                    <span class="r"></span>
+                                    <span class="y"></span>
+                                    <span class="g"></span>
+                                </div>
+                            </div>
+                            <div class="card-body terminal-body">
+                                <pre id="terminal-stdout">Initializing terminal. Waiting for agent triggers...</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Output Representation -->
+                <div class="card glass mt-1 hidden" id="final-output-card">
+                    <div class="card-header">
+                        <h3>Generated Package Deliverables</h3>
+                        <p id="output-package-type">YouTube Short Video Assembly</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="grid-2-1 align-center">
+                            <!-- Storyboard Video Player Representation -->
+                            <div class="video-preview-pane">
+                                <div class="video-canvas-container">
+                                    <img id="video-canvas-slide" src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800" alt="Slide">
+                                    <div class="video-overlay-text" id="video-canvas-overlay">Loading slides...</div>
+                                    <div class="video-playback-controls">
+                                        <button class="btn btn-small" id="btn-video-play">Play Short</button>
+                                        <div class="scrub-bar"><div class="scrub-fill" id="video-scrub-fill"></div></div>
+                                        <span id="video-time">0:00</span>
+                                    </div>
+                                </div>
+                                <audio id="video-audio-preview" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" style="display:none;"></audio>
+                            </div>
+
+                            <!-- Final Copywriting Text -->
+                            <div class="script-output-pane">
+                                <div class="meta-section">
+                                    <h4 id="output-seo-title">SEO Optimized Title</h4>
+                                    <div class="slug-line">Slug: <code id="output-slug">/slug-placeholder</code></div>
+                                </div>
+                                <div class="tabs-sub">
+                                    <button class="tab-sub-btn active" data-subtab="script">Script Narration</button>
+                                    <button class="tab-sub-btn" data-subtab="meta">Metadata Details</button>
+                                </div>
+                                <div class="tab-sub-content active" id="subtab-script">
+                                    <pre id="output-script-text">Script drafts will render here...</pre>
+                                </div>
+                                <div class="tab-sub-content" id="subtab-meta">
+                                    <div class="meta-list">
+                                        <div><strong>Meta Description:</strong> <span id="output-meta-description">-</span></div>
+                                        <div><strong>Keywords:</strong> <span id="output-keywords">-</span></div>
+                                        <div><strong>Tags:</strong> <span id="output-tags">-</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Memory Store -->
+            <section class="tab-pane" id="tab-memory">
+                <div class="card glass">
+                    <div class="card-header">
+                        <h3>Long-Term Preference Memory</h3>
+                        <p>Customize the cumulative preferences that guide writing tone, styling rules, and filters. Changes persist in SQLite database.</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="memory-grid" id="memory-cards-container">
+                            <!-- Populated dynamically with Memory items -->
+                        </div>
+                        <div class="form-actions mt-2 justify-end">
+                            <button class="btn btn-primary" id="btn-save-memories">
+                                <span>Save Memory Configuration</span>
+                                <span class="spinner hidden" id="save-mem-spinner"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Job Archives -->
+            <section class="tab-pane" id="tab-history">
+                <div class="card glass">
+                    <div class="card-header">
+                        <h3>Execution Job History</h3>
+                        <p>Monitor status, timings, and outcomes of completed, running, and historical agent harness jobs.</p>
+                    </div>
+                    <div class="card-body table-responsive">
+                        <table class="table" id="jobs-table">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Topic</th>
+                                    <th>Platform</th>
+                                    <th>Created At</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="jobs-table-body">
+                                <tr><td colspan="6" class="text-center">Loading jobs database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>
