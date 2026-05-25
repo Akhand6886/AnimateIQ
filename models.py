@@ -57,3 +57,19 @@ class Job(Base):
     retry_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class SemanticChunk(Base):
+    """
+    Stores text chunks and their corresponding embedding vectors for semantic search.
+    """
+    __tablename__ = "semantic_chunks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    file_path = Column(String, index=True, nullable=False)  # e.g., vault/characters/Tanjiro_Kamado.md
+    chunk_index = Column(Integer, nullable=False)
+    text_content = Column(Text, nullable=False)
+    embedding_json = Column(JSON, nullable=False)  # Stores the embedding float array
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
