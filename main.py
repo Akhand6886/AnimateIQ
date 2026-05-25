@@ -14,7 +14,8 @@ from typing import List, Dict, Any, Optional
 
 from config import settings
 from database import engine, Base, get_db, SessionLocal
-from models import Job, Series, ProjectMemory
+from models import Job, Series, ProjectMemory, SemanticChunk
+from services.vault_service import vault_service
 from schemas import (
     JobCreate, JobResponse, StructuredTask, ExecutionPlan, 
     HarnessRequest, ProjectMemorySchema
@@ -95,6 +96,19 @@ async def lifespan(app: FastAPI):
     """Manages application startup and graceful shutdown lifecycle."""
     logger.info("--- AnimateIQ Autonomous Agent Pipeline Initialized ---")
     preseed_memory_defaults()
+    
+    # Synchronize memories to vault and build indexes
+    db = SessionLocal()
+    try:
+        memories = db.query(ProjectMemory).all()
+        for m in memories:
+            file_path = vault_service.write_memory_to_vault(m.key, m.value)
+            await vault_service.index_file(file_path, db)
+        logger.info("[Database] Synced project memories to vault and updated vector indexes.")
+    except Exception as sync_err:
+        logger.error(f"[Database] Startup vault sync failed: {sync_err}")
+    finally:
+        db.close()
     
     # Start background job processing daemon loop
     daemon_task = asyncio.create_task(background_job_processor_daemon())
@@ -215,13 +229,30 @@ async def process_single_job(job_id: str):
                         
                     elif worker_type == "script_writer":
                         research_data = short_term_memory.get("research_worker", {})
+                        
+                        # RAG: Retrieve context from the Obsidian Semantic Vault
+                        rag_context = ""
+                        try:
+                            search_results = await vault_service.search(task_info.topic, db, top_k=3)
+                            if search_results:
+                                rag_context = "\n\n--- RELEVANT CONTEXT FROM VAULT ---\n"
+                                for res in search_results:
+                                    rag_context += f"Source: {res['file_path']} (Score: {res['score']:.2f})\n{res['text_content']}\n\n"
+                                logger.info(f"[Orchestrator: RAG] Retrieved {len(search_results)} relevant chunks from vault.")
+                        except Exception as rag_err:
+                            logger.error(f"[Orchestrator: RAG] Vault search failed: {rag_err}")
+                            
                         if correction_feedback:
                             step_log += f"Self-Correction loop attempt {attempt} based on evaluator feedback.\n"
                         
+                        writer_tone = tone if not correction_feedback else f"{tone}\n\nEVALUATOR REACTION:\n{correction_feedback}"
+                        if rag_context:
+                            writer_tone = f"{writer_tone}\n{rag_context}"
+                            
                         worker_output = await script_writer_worker.process(
                             task_info.topic, 
                             research_data, 
-                            tone if not correction_feedback else f"{tone}\n\nEVALUATOR REACTION:\n{correction_feedback}", 
+                            writer_tone, 
                             banned
                         )
                         step_log += f"Generated script draft. Length: {worker_output['word_count']} words.\n"
@@ -316,6 +347,20 @@ async def process_single_job(job_id: str):
                 job.collector_data = worker_output
             elif worker_type == "script_writer":
                 job.writer_data = worker_output
+                # Save script to Obsidian Vault and index it
+                try:
+                    clean_slug = task_info.topic.lower().replace(" ", "-").replace(":", "")
+                    file_path = vault_service.write_script_to_vault(
+                        series_slug=clean_slug,
+                        job_id=job.id,
+                        topic=task_info.topic,
+                        draft_text=worker_output.get("draft_text", "")
+                    )
+                    await vault_service.index_file(file_path, db)
+                    step_log += f"[Vault] Script saved to vault and indexed.\n"
+                except Exception as vault_err:
+                    logger.error(f"[Vault] Failed to save script to vault: {vault_err}")
+                    step_log += f"[Vault Warning] Script failed to save to vault: {vault_err}\n"
             elif worker_type == "style_consistency":
                 job.seo_data = worker_output
                 job.formatter_data = {
@@ -456,6 +501,14 @@ async def save_project_memory(memory_item: ProjectMemorySchema, db: Session = De
         mem = ProjectMemory(key=memory_item.key, value=memory_item.value)
         db.add(mem)
     db.commit()
+    
+    # Sync to Markdown Vault & Vector index
+    try:
+        file_path = vault_service.write_memory_to_vault(memory_item.key, memory_item.value)
+        await vault_service.index_file(file_path, db)
+    except Exception as e:
+        logger.error(f"[Vault] Failed to sync memory '{memory_item.key}' to vault: {e}")
+        
     return {"message": f"Successfully updated memory key: '{memory_item.key}'."}
 
 @app.delete("/api/harness/memory/{key}")
@@ -465,6 +518,17 @@ async def delete_project_memory(key: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Memory key not found")
     db.delete(mem)
     db.commit()
+    
+    # Delete from Vault & index
+    try:
+        vault_service.delete_memory_from_vault(key)
+        rel_path = f"vault/memories/{key}.md"
+        from sqlalchemy import delete
+        db.execute(delete(SemanticChunk).where(SemanticChunk.file_path == rel_path))
+        db.commit()
+    except Exception as e:
+        logger.error(f"[Vault] Failed to delete memory '{key}' from vault: {e}")
+        
     return {"message": f"Successfully deleted memory key: '{key}'."}
 
 @app.get("/api/jobs", response_model=List[JobResponse])
@@ -477,6 +541,25 @@ async def get_job(job_id: str, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job
+
+
+@app.post("/api/vault/sync")
+async def sync_vault_endpoint(db: Session = Depends(get_db)):
+    """Manually re-indexes the entire Obsidian Markdown Vault."""
+    try:
+        res = await vault_service.reindex_vault(db)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/vault/search")
+async def search_vault_endpoint(query: str, top_k: int = 3, db: Session = Depends(get_db)):
+    """Performs semantic vector search over the vault."""
+    try:
+        res = await vault_service.search(query, db, top_k=top_k)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
