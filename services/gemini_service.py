@@ -210,6 +210,45 @@ class GeminiService:
             logger.warning(f"[Gemini Offline] Gemini server is unreachable: {e}. Generating schema-compliant mock fallback.")
             return self._generate_fallback_mock(prompt, schema_class)
 
+    async def generate_embedding(self, text: str) -> List[float]:
+        """Generates embedding vector for a given text using Gemini's embedding model."""
+        api_key = settings.gemini_api_key
+        if not api_key:
+            return self._generate_embedding_fallback(text)
+
+        url = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
+        payload = {
+            "content": {
+                "parts": [
+                    {"text": text}
+                ]
+            }
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": api_key
+        }
+
+        try:
+            client = await self._get_client()
+            response = await client.post(url, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            return data["embedding"]["values"]
+        except Exception as e:
+            logger.warning(f"[Gemini Offline] Could not generate embedding: {e}. Utilizing fallback mock vector.")
+            return self._generate_embedding_fallback(text)
+
+    def _generate_embedding_fallback(self, text: str) -> List[float]:
+        """Generates a reproducible 768-dimensional mock embedding vector derived from text hashing."""
+        import hashlib
+        h = hashlib.md5(text.encode("utf-8")).hexdigest()
+        vals = []
+        for i in range(768):
+            val = int(h[i % len(h)], 16) / 16.0
+            vals.append(0.1 + (val * 0.05))
+        return vals
+
     def _generate_text_fallback(self, prompt: str) -> str:
         """Offline smart fallback generation."""
         prompt_lower = prompt.lower()
